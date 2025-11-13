@@ -1,12 +1,34 @@
 .search-widget {
-  background: var(--search-widget-background, #ffffff);
   color: var(--search-widget-text, #1f1f1f);
-  border-radius: var(--search-widget-border-radius, 12px);
-  padding: 1.5rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  align-items: flex-start;
+  width: 100%;
+
+  &__trigger {
+    display: none;
+  }
+
+  &__dialog {
+    width: 100%;
+  }
+
+  &__dialog-inner {
+    background: var(--search-widget-background, #ffffff);
+    color: inherit;
+    border-radius: var(--search-widget-border-radius, 12px);
+    padding: 1.5rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+  }
+
+  &__close {
+    display: none;
+  }
 
   &__field {
     display: flex;
@@ -98,5 +120,163 @@
   }
 }
 
-@import 'desktop-tablet';
-@import 'mobile';
+.search-widget--enhanced {
+  .search-widget__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--search-widget-background, #ffffff);
+    color: inherit;
+    border-radius: calc(var(--search-widget-border-radius, 12px) - 4px);
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    padding: 0.7rem 1.25rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+    &:hover,
+    &:focus {
+      outline: none;
+      border-color: var(--search-widget-accent, #2563eb);
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.28);
+      transform: translateY(-1px);
+    }
+  }
+
+  .search-widget__dialog {
+    position: fixed;
+    inset: 0;
+    padding: 2rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+    z-index: 9999;
+  }
+
+  .search-widget__dialog-inner {
+    width: min(90vw, 560px);
+    max-height: 80vh;
+    overflow: auto;
+    padding: 2.5rem 2rem 1.75rem;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+  }
+
+  .search-widget__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover,
+    &:focus {
+      outline: none;
+      background: rgba(37, 99, 235, 0.15);
+      color: var(--search-widget-accent, #2563eb);
+    }
+  }
+
+  .search-widget__dialog.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
+
+body.search-widget-dialog-open {
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .search-widget {
+    &__field {
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 1rem;
+    }
+
+    &__label {
+      flex: 0 0 160px;
+      font-size: 1.05rem;
+    }
+
+    &__input {
+      flex: 1 1 auto;
+      font-size: 1.05rem;
+    }
+
+    &__hint {
+      flex-basis: 100%;
+      order: 3;
+    }
+
+    &__results {
+      gap: 1rem;
+    }
+
+    &__item-description {
+      font-size: 0.95rem;
+    }
+  }
+
+  .search-widget--enhanced {
+    .search-widget__dialog {
+      padding: 3rem 1.5rem;
+    }
+
+    .search-widget__dialog-inner {
+      width: min(70vw, 640px);
+      padding: 3rem 2.5rem 2.25rem;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .search-widget {
+    &__label {
+      font-size: 0.95rem;
+    }
+
+    &__input {
+      font-size: 0.95rem;
+      padding: 0.65rem 0.85rem;
+    }
+
+    &__item-title {
+      font-size: 0.95rem;
+    }
+
+    &__item-description {
+      font-size: 0.85rem;
+    }
+
+    &__hint {
+      font-size: 0.8rem;
+    }
+  }
+
+  .search-widget--enhanced {
+    .search-widget__dialog-inner {
+      padding: 2.25rem 1.5rem 1.5rem;
+    }
+  }
+}

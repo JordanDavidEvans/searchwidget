@@ -61,16 +61,47 @@
       return items.slice();
     }
 
-    return items.filter(function (item) {
+    var ranked = [];
+
+    items.forEach(function (item, index) {
       var title = normalizeValue(item.titleName);
       var description = normalizeValue(item.descText);
-      var slug = normalizeValue(item.linkDest);
+      var link = normalizeValue(item.linkDest);
 
-      return (
-        title.indexOf(normalizedQuery) !== -1 ||
-        description.indexOf(normalizedQuery) !== -1 ||
-        slug.indexOf(normalizedQuery) !== -1
-      );
+      var titleIndex = title.indexOf(normalizedQuery);
+      var descriptionIndex = description.indexOf(normalizedQuery);
+      var linkIndex = link.indexOf(normalizedQuery);
+
+      if (titleIndex === -1 && descriptionIndex === -1 && linkIndex === -1) {
+        return;
+      }
+
+      var rankValue;
+
+      if (titleIndex !== -1) {
+        rankValue = 0 + titleIndex / 1000;
+      } else if (descriptionIndex !== -1) {
+        rankValue = 1 + descriptionIndex / 1000;
+      } else {
+        rankValue = 2 + linkIndex / 1000;
+      }
+
+      ranked.push({
+        item: item,
+        rank: rankValue,
+        originalIndex: index
+      });
+    });
+
+    ranked.sort(function (a, b) {
+      if (a.rank !== b.rank) {
+        return a.rank - b.rank;
+      }
+      return a.originalIndex - b.originalIndex;
+    });
+
+    return ranked.map(function (entry) {
+      return entry.item;
     });
   }
 
@@ -84,6 +115,11 @@
 
       var input = root.querySelector('.js-search-widget-input');
       var emptyState = root.querySelector('.js-search-widget-empty');
+      var trigger = root.querySelector('.js-search-widget-trigger');
+      var dialog = root.querySelector('.js-search-widget-dialog');
+      var closeButton = root.querySelector('.js-search-widget-close');
+      var body = document.body;
+      var lastFocused = null;
 
       if (emptyState) {
         emptyState.classList.remove('is-visible');
@@ -101,21 +137,98 @@
           return {
             titleName: itemNode.getAttribute('data-title') || itemNode.textContent,
             descText: itemNode.getAttribute('data-description') || '',
-            linkDest: itemNode.getAttribute('data-slug') || href || '#'
+            linkDest: itemNode.getAttribute('data-link') || href || '#'
           };
         });
       }
 
       renderList(root, items);
 
-      if (!input) {
-        return;
+      if (input) {
+        input.value = '';
+        input.addEventListener('input', function (event) {
+          var filtered = filterItems(items, event.target.value);
+          renderList(root, filtered);
+        });
       }
 
-      input.addEventListener('input', function (event) {
-        var filtered = filterItems(items, event.target.value);
-        renderList(root, filtered);
-      });
+      if (trigger && dialog && input) {
+        root.classList.add('search-widget--enhanced');
+        dialog.setAttribute('aria-hidden', 'true');
+        dialog.classList.remove('is-visible');
+
+        var openDialog = function () {
+          if (dialog.classList.contains('is-visible')) {
+            return;
+          }
+
+          lastFocused = document.activeElement;
+          dialog.classList.add('is-visible');
+          dialog.setAttribute('aria-hidden', 'false');
+          trigger.setAttribute('aria-expanded', 'true');
+
+          if (body) {
+            body.classList.add('search-widget-dialog-open');
+          }
+
+          window.requestAnimationFrame(function () {
+            input.focus();
+          });
+        };
+
+        var closeDialog = function () {
+          if (!dialog.classList.contains('is-visible')) {
+            return;
+          }
+
+          dialog.classList.remove('is-visible');
+          dialog.setAttribute('aria-hidden', 'true');
+          trigger.setAttribute('aria-expanded', 'false');
+
+          if (body) {
+            body.classList.remove('search-widget-dialog-open');
+          }
+
+          if (lastFocused && typeof lastFocused.focus === 'function') {
+            window.requestAnimationFrame(function () {
+              lastFocused.focus();
+            });
+          }
+        };
+
+        trigger.addEventListener('click', function (event) {
+          event.preventDefault();
+          openDialog();
+        });
+
+        if (closeButton) {
+          closeButton.addEventListener('click', function () {
+            closeDialog();
+          });
+        }
+
+        dialog.addEventListener('click', function (event) {
+          if (event.target === dialog) {
+            closeDialog();
+          }
+        });
+
+        dialog.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeDialog();
+          }
+        });
+
+        widgetInstance.on('destroy', function () {
+          closeDialog();
+        });
+      } else if (trigger && input) {
+        trigger.addEventListener('click', function (event) {
+          event.preventDefault();
+          input.focus();
+        });
+      }
     });
   }
 

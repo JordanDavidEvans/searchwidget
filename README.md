@@ -9,8 +9,8 @@ This repository contains the source assets for a custom Duda search widget. The 
 | `widget.html` | Widget markup and data bindings for content and design editor values. |
 | `widget.js` | Client-side filtering logic for the search bar. |
 | `widget.scss` | Base styles and shared layout tokens for the widget. |
-| `desktop-tablet.scss` | Responsive refinements for tablet and desktop breakpoints (≥768px). |
-| `mobile.scss` | Responsive refinements for handheld breakpoints (≤767px). |
+| `desktop-tablet.scss` | Legacy responsive refinements for tablet/desktop breakpoints (styles now merged into `widget.scss`). |
+| `mobile.scss` | Legacy responsive refinements for handheld breakpoints (retained for reference; no longer imported). |
 
 ## Content Editor Configuration
 
@@ -44,13 +44,14 @@ Make sure the design settings inject their values into the widget scope as CSS c
 
 ## Behavior Overview
 
+- Clicking the search trigger opens a modal dialog where visitors can enter their query without leaving the current view.
 - The widget loads the configured `pageList` items and filters them as the user types.
-- Title, description, and slug fields are searched to maximize discoverability.
+- Title, description, and full link values are searched to maximize discoverability, with title matches receiving the highest priority, followed by description matches.
 - The "No results" message is announced via `aria-live` for accessibility and is only shown when no matches are available.
-- Base styling is defined in `widget.scss`, while `desktop-tablet.scss` and `mobile.scss` layer breakpoint-specific adjustments.
+- Base styling and responsive breakpoints are now consolidated in `widget.scss`.
 
 ## Development Notes
 
-- SCSS files assume the Duda pipeline will compile them to CSS. Maintain the import order in `widget.scss` if you add more partials.
+- All responsive rules now live directly in `widget.scss`, so no SCSS `@import` directives are required in the Duda pipeline.
 - JavaScript avoids framework dependencies and uses the Duda widget API (`widget.on('ready', ...)`) for initialization.
 - When adjusting markup or styles, keep accessibility attributes (labels, hints, and live regions) intact.
