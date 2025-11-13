@@ -1,0 +1,26 @@
+<div class="search-widget" data-widget-id="{{widget.id}}" style="--search-widget-background: {{design.backgroundColor}}; --search-widget-text: {{design.textColor}}; --search-widget-accent: {{design.accentColor}}; --search-widget-border-radius: {{design.borderRadius}}px;">
+  <div class="search-widget__field">
+    <label class="search-widget__label" for="search-widget-input-{{widget.id}}">{{content.searchLabel}}</label>
+    <input
+      id="search-widget-input-{{widget.id}}"
+      class="search-widget__input js-search-widget-input"
+      type="search"
+      placeholder="{{content.searchPlaceholder}}"
+      aria-describedby="search-widget-hint-{{widget.id}}"
+    />
+    <p id="search-widget-hint-{{widget.id}}" class="search-widget__hint">{{content.searchHint}}</p>
+  </div>
+  <div class="search-widget__results" aria-live="polite">
+    <ul class="search-widget__list js-search-widget-list">
+      {{#pageList}}
+        <li class="search-widget__item" data-title="{{titleName}}" data-description="{{descText}}" data-slug="{{linkDest}}">
+          <a class="search-widget__link" href="{{linkDest}}">
+            <span class="search-widget__item-title">{{titleName}}</span>
+            <span class="search-widget__item-description">{{descText}}</span>
+          </a>
+        </li>
+      {{/pageList}}
+    </ul>
+    <p class="search-widget__empty js-search-widget-empty" role="status" aria-hidden="true">{{content.noResultsText}}</p>
+  </div>
+</div>

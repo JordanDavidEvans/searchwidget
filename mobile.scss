@@ -1,0 +1,26 @@
+@media (max-width: 767px) {
+  .search-widget {
+    padding: 1.25rem;
+
+    &__label {
+      font-size: 0.95rem;
+    }
+
+    &__input {
+      font-size: 0.95rem;
+      padding: 0.65rem 0.85rem;
+    }
+
+    &__item-title {
+      font-size: 0.95rem;
+    }
+
+    &__item-description {
+      font-size: 0.85rem;
+    }
+
+    &__hint {
+      font-size: 0.8rem;
+    }
+  }
+}
