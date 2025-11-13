@@ -5,6 +5,176 @@
     return String(value || '').trim().toLowerCase();
   }
 
+  function parseLinkObjectString(value) {
+    var trimmed = String(value || '').trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.charAt(0) === '{' && trimmed.charAt(trimmed.length - 1) === '}') {
+      trimmed = trimmed.slice(1, -1);
+    }
+
+    if (!trimmed) {
+      return null;
+    }
+
+    var result = {};
+    trimmed.split(/,\s*/).forEach(function (pair) {
+      var separatorIndex = pair.indexOf('=');
+      if (separatorIndex === -1) {
+        return;
+      }
+
+      var key = pair.slice(0, separatorIndex).trim();
+      var val = pair.slice(separatorIndex + 1).trim();
+
+      if (!key) {
+        return;
+      }
+
+      result[key] = val;
+    });
+
+    return Object.keys(result).length ? result : null;
+  }
+
+  function resolveLinkDetails(linkValue) {
+    var href = '#';
+    var target = '';
+    var rel = '';
+    var searchParts = [];
+
+    if (linkValue && typeof linkValue === 'object') {
+      if (typeof linkValue.href === 'string') {
+        var hrefCandidate = linkValue.href.trim();
+        if (hrefCandidate && hrefCandidate !== 'null') {
+          if (hrefCandidate.indexOf('=') !== -1 && /\b(href|raw_url|url)=/.test(hrefCandidate)) {
+            var parsedFromHref = parseLinkObjectString(hrefCandidate);
+            if (parsedFromHref) {
+              if (!parsedFromHref.target && typeof linkValue.target === 'string') {
+                var parsedTarget = linkValue.target.trim();
+                if (parsedTarget && parsedTarget !== 'null') {
+                  parsedFromHref.target = parsedTarget;
+                }
+              }
+
+              if (!parsedFromHref.rel && typeof linkValue.rel === 'string') {
+                var parsedRel = linkValue.rel.trim();
+                if (parsedRel && parsedRel !== 'null') {
+                  parsedFromHref.rel = parsedRel;
+                }
+              }
+
+              return resolveLinkDetails(parsedFromHref);
+            }
+          }
+          href = hrefCandidate;
+        }
+      }
+
+      if (href === '#' && typeof linkValue.raw_url === 'string') {
+        var rawUrlCandidate = linkValue.raw_url.trim();
+        if (rawUrlCandidate && rawUrlCandidate !== 'null') {
+          href = rawUrlCandidate;
+        }
+      }
+
+      if (href === '#' && typeof linkValue.url === 'string') {
+        var urlCandidate = linkValue.url.trim();
+        if (urlCandidate && urlCandidate !== 'null') {
+          href = urlCandidate;
+        }
+      }
+
+      if (typeof linkValue.target === 'string' && linkValue.target.trim() && linkValue.target !== 'null') {
+        target = linkValue.target.trim();
+      }
+
+      if (!target && (linkValue.openInNewTab === true || linkValue.open_in_new_tab === true || linkValue.target === 'NEW_TAB')) {
+        target = '_blank';
+      }
+
+      if (typeof linkValue.rel === 'string' && linkValue.rel.trim() && linkValue.rel !== 'null') {
+        rel = linkValue.rel.trim();
+      }
+
+      ['value', 'label', 'href', 'raw_url', 'url', 'slug'].forEach(function (key) {
+        if (typeof linkValue[key] === 'string') {
+          var searchCandidate = linkValue[key].trim();
+          if (searchCandidate && searchCandidate !== 'null') {
+            searchParts.push(searchCandidate);
+          }
+        }
+      });
+    } else if (typeof linkValue === 'string' && linkValue.trim()) {
+      var directValue = linkValue.trim();
+      if (directValue === '[object Object]') {
+        directValue = '';
+      }
+      var parsedObject = null;
+
+      if (directValue.indexOf('=') !== -1 && /\b(href|raw_url|url)=/.test(directValue)) {
+        parsedObject = parseLinkObjectString(directValue);
+      }
+
+      if (parsedObject) {
+        return resolveLinkDetails(parsedObject);
+      }
+
+      if (directValue && directValue !== 'null') {
+        href = directValue;
+        searchParts.push(directValue);
+      }
+    }
+
+    if (!href) {
+      href = '#';
+    }
+
+    if (!rel && target === '_blank') {
+      rel = 'noopener noreferrer';
+    }
+
+    if (searchParts.indexOf(href) === -1) {
+      searchParts.push(href);
+    }
+
+    return {
+      href: href,
+      target: target,
+      rel: rel,
+      searchValue: searchParts.join(' ').trim()
+    };
+  }
+
+  function normalizeItem(item) {
+    var safeItem = item || {};
+    var linkDetails = resolveLinkDetails(safeItem.linkDest);
+
+    if (!linkDetails.target && typeof safeItem.linkTarget === 'string' && safeItem.linkTarget.trim()) {
+      linkDetails.target = safeItem.linkTarget.trim();
+    }
+
+    if (!linkDetails.rel && typeof safeItem.linkRel === 'string' && safeItem.linkRel.trim()) {
+      linkDetails.rel = safeItem.linkRel.trim();
+    }
+
+    var searchMeta = linkDetails.searchValue;
+    if (!searchMeta && typeof safeItem.linkSearchValue === 'string') {
+      searchMeta = safeItem.linkSearchValue;
+    }
+
+    return {
+      titleName: safeItem.titleName || '',
+      descText: safeItem.descText || '',
+      linkDest: linkDetails.href,
+      linkTarget: linkDetails.target,
+      linkRel: linkDetails.rel,
+      linkSearchValue: searchMeta || linkDetails.href
+    };
+  }
+
   function renderList(root, items) {
     var list = root.querySelector('.js-search-widget-list');
     var emptyState = root.querySelector('.js-search-widget-empty');
@@ -38,6 +208,14 @@
       link.className = 'search-widget__link';
       link.href = item.linkDest || '#';
 
+      if (item.linkTarget) {
+        link.target = item.linkTarget;
+      }
+
+      if (item.linkRel) {
+        link.rel = item.linkRel;
+      }
+
       var title = document.createElement('span');
       title.className = 'search-widget__item-title';
       title.textContent = item.titleName || '';
@@ -67,10 +245,11 @@
       var title = normalizeValue(item.titleName);
       var description = normalizeValue(item.descText);
       var link = normalizeValue(item.linkDest);
+      var linkMeta = normalizeValue(item.linkSearchValue);
 
       var titleIndex = title.indexOf(normalizedQuery);
       var descriptionIndex = description.indexOf(normalizedQuery);
-      var linkIndex = link.indexOf(normalizedQuery);
+      var linkIndex = linkMeta ? linkMeta.indexOf(normalizedQuery) : link.indexOf(normalizedQuery);
 
       if (titleIndex === -1 && descriptionIndex === -1 && linkIndex === -1) {
         return;
@@ -128,17 +307,24 @@
 
       var items = [];
       if (widgetInstance.data && Array.isArray(widgetInstance.data.pageList)) {
-        items = widgetInstance.data.pageList.slice();
+        items = widgetInstance.data.pageList.map(normalizeItem);
       } else {
         var existingItems = root.querySelectorAll('.search-widget__item');
         items = Array.prototype.map.call(existingItems, function (itemNode) {
           var linkNode = itemNode.querySelector('a');
           var href = linkNode ? linkNode.getAttribute('href') : '#';
-          return {
+          var target = linkNode ? linkNode.getAttribute('target') : '';
+          var rel = linkNode ? linkNode.getAttribute('rel') : '';
+
+          return normalizeItem({
             titleName: itemNode.getAttribute('data-title') || itemNode.textContent,
             descText: itemNode.getAttribute('data-description') || '',
-            linkDest: itemNode.getAttribute('data-link') || href || '#'
-          };
+            linkDest: {
+              href: itemNode.getAttribute('data-link') || href || '#',
+              target: target,
+              rel: rel
+            }
+          });
         });
       }
 
