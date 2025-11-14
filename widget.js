@@ -203,17 +203,24 @@
     items.forEach(function (item) {
       var listItem = document.createElement('li');
       listItem.className = 'search-widget__item';
+      listItem.setAttribute('data-title', item.titleName || '');
+      listItem.setAttribute('data-description', item.descText || '');
+      listItem.setAttribute('data-link', item.linkDest || '#');
 
       var link = document.createElement('a');
       link.className = 'search-widget__link';
-      link.href = item.linkDest || '#';
+      link.setAttribute('href', item.linkDest || '#');
 
       if (item.linkTarget) {
-        link.target = item.linkTarget;
+        link.setAttribute('target', item.linkTarget);
+      } else {
+        link.removeAttribute('target');
       }
 
       if (item.linkRel) {
-        link.rel = item.linkRel;
+        link.setAttribute('rel', item.linkRel);
+      } else {
+        link.removeAttribute('rel');
       }
 
       var title = document.createElement('span');
@@ -307,7 +314,7 @@
           var target = linkNode ? linkNode.getAttribute('target') : '';
           var rel = linkNode ? linkNode.getAttribute('rel') : '';
 
-          return normalizeItem({
+          var normalized = normalizeItem({
             titleName: itemNode.getAttribute('data-title') || itemNode.textContent,
             descText: itemNode.getAttribute('data-description') || '',
             linkDest: {
@@ -316,6 +323,28 @@
               rel: rel
             }
           });
+
+          if (linkNode) {
+            linkNode.setAttribute('href', normalized.linkDest || '#');
+
+            if (normalized.linkTarget) {
+              linkNode.setAttribute('target', normalized.linkTarget);
+            } else {
+              linkNode.removeAttribute('target');
+            }
+
+            if (normalized.linkRel) {
+              linkNode.setAttribute('rel', normalized.linkRel);
+            } else {
+              linkNode.removeAttribute('rel');
+            }
+          }
+
+          itemNode.setAttribute('data-link', normalized.linkDest || '#');
+          itemNode.setAttribute('data-title', normalized.titleName || '');
+          itemNode.setAttribute('data-description', normalized.descText || '');
+
+          return normalized;
         });
       }
 
