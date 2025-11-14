@@ -243,27 +243,19 @@
 
     items.forEach(function (item, index) {
       var title = normalizeValue(item.titleName);
-      var description = normalizeValue(item.descText);
       var link = normalizeValue(item.linkDest);
       var linkMeta = normalizeValue(item.linkSearchValue);
 
       var titleIndex = title.indexOf(normalizedQuery);
-      var descriptionIndex = description.indexOf(normalizedQuery);
       var linkIndex = linkMeta ? linkMeta.indexOf(normalizedQuery) : link.indexOf(normalizedQuery);
 
-      if (titleIndex === -1 && descriptionIndex === -1 && linkIndex === -1) {
+      if (titleIndex === -1 && linkIndex === -1) {
         return;
       }
 
-      var rankValue;
-
-      if (titleIndex !== -1) {
-        rankValue = 0 + titleIndex / 1000;
-      } else if (descriptionIndex !== -1) {
-        rankValue = 1 + descriptionIndex / 1000;
-      } else {
-        rankValue = 2 + linkIndex / 1000;
-      }
+      var isTitleMatch = titleIndex !== -1;
+      var effectiveIndex = isTitleMatch ? titleIndex : linkIndex;
+      var rankValue = (isTitleMatch ? 0 : 1) + effectiveIndex / 1000;
 
       ranked.push({
         item: item,
@@ -297,7 +289,6 @@
       var trigger = root.querySelector('.js-search-widget-trigger');
       var dialog = root.querySelector('.js-search-widget-dialog');
       var closeButton = root.querySelector('.js-search-widget-close');
-      var body = document.body;
       var lastFocused = null;
 
       if (emptyState) {
@@ -352,17 +343,14 @@
           dialog.classList.add('is-visible');
           dialog.setAttribute('aria-hidden', 'false');
           trigger.setAttribute('aria-expanded', 'true');
-
-          if (body) {
-            body.classList.add('search-widget-dialog-open');
-          }
+          root.classList.add('search-widget--expanded');
 
           window.requestAnimationFrame(function () {
             input.focus();
           });
         };
 
-        var closeDialog = function () {
+        var closeDialog = function (shouldReset) {
           if (!dialog.classList.contains('is-visible')) {
             return;
           }
@@ -370,9 +358,11 @@
           dialog.classList.remove('is-visible');
           dialog.setAttribute('aria-hidden', 'true');
           trigger.setAttribute('aria-expanded', 'false');
+          root.classList.remove('search-widget--expanded');
 
-          if (body) {
-            body.classList.remove('search-widget-dialog-open');
+          if (shouldReset !== false && input) {
+            input.value = '';
+            renderList(root, items);
           }
 
           if (lastFocused && typeof lastFocused.focus === 'function') {
@@ -389,25 +379,19 @@
 
         if (closeButton) {
           closeButton.addEventListener('click', function () {
-            closeDialog();
+            closeDialog(true);
           });
         }
-
-        dialog.addEventListener('click', function (event) {
-          if (event.target === dialog) {
-            closeDialog();
-          }
-        });
 
         dialog.addEventListener('keydown', function (event) {
           if (event.key === 'Escape' || event.key === 'Esc') {
             event.preventDefault();
-            closeDialog();
+            closeDialog(true);
           }
         });
 
         widgetInstance.on('destroy', function () {
-          closeDialog();
+          closeDialog(false);
         });
       } else if (trigger && input) {
         trigger.addEventListener('click', function (event) {
