@@ -9,8 +9,15 @@
     aria-haspopup="dialog"
     aria-expanded="false"
     aria-controls="search-widget-dialog-{{widget.id}}"
+    aria-label="{{content.searchLabel}}"
   >
-    {{content.searchLabel}}
+    <span class="search-widget__trigger-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+        <path d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 001.57-4.23A6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"></path>
+      </svg>
+    </span>
+    <span class="search-widget__trigger-placeholder">{{content.searchPlaceholder}}</span>
+    <span class="search-widget__trigger-label">{{content.searchLabel}}</span>
   </button>
   <div
     class="search-widget__dialog js-search-widget-dialog"
@@ -26,14 +33,21 @@
         <span aria-hidden="true">&times;</span>
       </button>
       <div class="search-widget__field">
-        <label class="search-widget__label" id="search-widget-label-{{widget.id}}" for="search-widget-input-{{widget.id}}">{{content.searchLabel}}</label>
-        <input
-          id="search-widget-input-{{widget.id}}"
-          class="search-widget__input js-search-widget-input"
-          type="search"
-          placeholder="{{content.searchPlaceholder}}"
-          aria-describedby="search-widget-hint-{{widget.id}}"
-        />
+        <label class="search-widget__label search-widget__sr-only" id="search-widget-label-{{widget.id}}" for="search-widget-input-{{widget.id}}">{{content.searchLabel}}</label>
+        <div class="search-widget__input-wrapper">
+          <span class="search-widget__input-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+              <path d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 001.57-4.23A6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"></path>
+            </svg>
+          </span>
+          <input
+            id="search-widget-input-{{widget.id}}"
+            class="search-widget__input js-search-widget-input"
+            type="search"
+            placeholder="{{content.searchPlaceholder}}"
+            aria-describedby="search-widget-hint-{{widget.id}}"
+          />
+        </div>
         <p id="search-widget-hint-{{widget.id}}" class="search-widget__hint">{{content.searchHint}}</p>
       </div>
       <div class="search-widget__results" aria-live="polite">
