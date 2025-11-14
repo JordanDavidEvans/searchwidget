@@ -128,20 +128,39 @@
       }
     }
 
-    if (!href) {
-      href = '#';
+    var finalHref = typeof href === 'string' ? href.trim() : '';
+
+    if (!finalHref) {
+      finalHref = '#';
+    }
+
+    var objectLikeHref = finalHref;
+
+    if (objectLikeHref && objectLikeHref.indexOf('%7B') !== -1) {
+      try {
+        objectLikeHref = decodeURIComponent(objectLikeHref);
+      } catch (e) {
+        objectLikeHref = finalHref;
+      }
+    }
+
+    if (objectLikeHref && objectLikeHref.charAt(0) === '{' && objectLikeHref.indexOf('=') !== -1) {
+      var reparsedObject = parseLinkObjectString(objectLikeHref);
+      if (reparsedObject) {
+        return resolveLinkDetails(reparsedObject);
+      }
     }
 
     if (!rel && target === '_blank') {
       rel = 'noopener noreferrer';
     }
 
-    if (searchParts.indexOf(href) === -1) {
-      searchParts.push(href);
+    if (searchParts.indexOf(finalHref) === -1) {
+      searchParts.push(finalHref);
     }
 
     return {
-      href: href,
+      href: finalHref,
       target: target,
       rel: rel,
       searchValue: searchParts.join(' ').trim()
